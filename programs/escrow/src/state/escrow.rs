@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 
 #[account]
-pub struct EscrowState<'info> {
+pub struct EscrowState {
     pub seeds: u64,
     pub bump: u8,
     pub mint_a: Pubkey,

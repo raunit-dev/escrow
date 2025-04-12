@@ -11,6 +11,8 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
+
+
 declare_id!("4vwUc38yQZ97hhspt9iQwjWNS5rJ56uWUDSBwofeDriE");
 
 #[program]
@@ -32,7 +34,7 @@ pub mod escrow {
     }
 
     pub fn take(ctx: Context<Take>) -> Result<()> {
-        ctx.accounts.deposit()?;
+        ctx.accounts.deposit(amount,decimals)?;
         ctx.accounts.refund_and_close_vault()
     }
 }

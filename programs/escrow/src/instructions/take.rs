@@ -12,7 +12,7 @@ use crate::state::EscrowState;
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
-pub struct take<'info> {
+pub struct Take<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
     #[account(mut)]
@@ -96,12 +96,14 @@ impl<'info> Take<'info> {
 
 
         pub fn withdraw(&mut self, amount: u64, decimals: u8) -> Result<()> {
-            let signer_seeds: [&[&[u8]]] = [&[
-            b"escrow",
-            self.maker.to_account_info().key().as_ref(),
-            &self.escrow.seed.to_le_bytes()[..],
-            &[self.escrow.bump],
-        ]];
+        let signer_seeds: &[&[&[u8]]] = &[
+            &[
+                b"escrow",
+                self.maker.to_account_info().key().as_ref(),
+                &self.escrow.seeds.to_le_bytes()[..],
+                &[self.escrow.bump],
+            ],
+        ];
         let cpi_program = self.token_program.to_account_info();
         let transfer_accounts = TransferChecked {
             from: self.vault.to_account_info(),
@@ -118,10 +120,10 @@ impl<'info> Take<'info> {
         pub fn close_vault(&mut self) -> Result<()> {
 
 
-            let signer_seeds: [&[&[u8]]] = [&[
+            let signer_seeds: [&[&[u8]]] = &[&[
             b"escrow",
             self.maker.to_account_info().key().as_ref(),
-            &self.escrow.seed.to_le_bytes()[..],
+            &self.escrow.seeds.to_le_bytes()[..],
             &[self.escrow.bump],
         ]];
 

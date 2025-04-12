@@ -23,19 +23,17 @@ pub struct Make<'info> {
     pub mint_b: InterfaceAccount<'info, Mint>, // Token that the maker wants (e.g., USDT).
 
     #[account(
-        mut,
         init_if_needed,
-        payer = taker,
+        payer = maker,
         associated_token::mint = mint_a,
         associated_token::authority = maker,
-        associated_token_program::token_program = token_program
     )]
     pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>, // Maker's token account for mint_a.
 
     #[account(
         init,
         payer = maker,
-        space = EscrowState::INIT_SPACE + 8,
+        space = EscrowState::INIT_SPACE,
         seeds = [b"escrow", maker.key().as_ref(), seed.to_le_bytes().as_ref()],
         bump
     )]
@@ -62,11 +60,11 @@ impl<'info> Make<'info> {
         bump: u8,
     ) -> Result<()> {
         self.escrow.set_inner(EscrowState {
-            seed,
+            seeds,
             maker: self.maker.key(),
             mint_a: self.mint_a.key(),
             mint_b: self.mint_b.key(),
-            receive_amount,
+            recieve_amount,
             bump,
         });
         Ok(())
