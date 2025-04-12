@@ -49,10 +49,10 @@ pub struct Refund<'info> {
 impl<'info> Refund <'info> {
     pub fn refund_and_close_vault(&mut self) -> Result<()> {
 
-        let signer_seeds: [&[&[u8]]] = [&[
+        let signer_seeds: [&[&[u8]]] = &[&[
             b"escrow",
             self.maker.to_account_info().key().as_ref(),
-            &self.escrow.seed.to_le_bytes()[..],
+            &self.escrow.seeds.to_le_bytes()[..],
             &[self.escrow.bump],
         ]];
         let cpi_program = self.token_program.to_account_info();
