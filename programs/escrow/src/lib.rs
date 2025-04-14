@@ -33,7 +33,7 @@ pub mod escrow {
         ctx.accounts.refund_and_close_vault()
     }
 
-    pub fn take(ctx: Context<Take>) -> Result<()> {
+    pub fn deposit(ctx: Context<Take>) -> Result<()> {
         ctx.accounts.deposit(amount,decimals)?;
     }
 
