@@ -8,26 +8,22 @@ use anchor_spl::{
 use crate::state::EscrowState;
 
 #[derive(Accounts)]
+#[instruction(seed: u64)]
 pub struct Refund<'info> {
     #[account(mut)]
     pub maker: Signer<'info>,
-    #[account(
-        mint::token_program = token_program
-    )]
+    #[account(mint::token_program = token_program)]
     pub mint_a: InterfaceAccount<'info, Mint>, 
     #[account(
         mut,
         associated_token::mint = mint_a,
         associated_token::authority = maker,
-        associated_token_program::token_program = token_program
     )]
     pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
     #[account(
         mut,
-        init,
         has_one = mint_a,
         has_one = maker,
-        payer = maker,
         seeds = [b"escrow", maker.key().as_ref(), seed.to_le_bytes().as_ref()],
         bump = escrow.bump,
     )]
@@ -36,8 +32,6 @@ pub struct Refund<'info> {
         mut,
         associated_token::mint = mint_a,
         associated_token::authority = escrow,
-        payer = maker,
-        associated_token_program::token_program = token_program
     )]
     pub vault: InterfaceAccount<'info, TokenAccount>, // The vault holding the escrowed tokens.
 

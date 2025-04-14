@@ -34,7 +34,7 @@ pub struct Make<'info> {
         init,
         payer = maker,
         space = EscrowState::INIT_SPACE,
-        seeds = [b"escrow", maker.key().as_ref(), seed.to_le_bytes().as_ref()],
+        seeds = [b"escrow", maker.key().as_ref(), &seed.to_le_bytes().as_ref()],
         bump
     )]
     pub escrow: Account<'info, EscrowState>, // Escrow state PDA.
@@ -55,8 +55,8 @@ pub struct Make<'info> {
 impl<'info> Make<'info> {
     pub fn init_escrow_state(
         &mut self,
-        seed: u64,
-        receive_amount: u64,
+        seeds: u64,
+        recieve_amount: u64,
         bump: u8,
     ) -> Result<()> {
         self.escrow.set_inner(EscrowState {
