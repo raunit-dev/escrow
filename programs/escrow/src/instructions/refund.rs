@@ -5,6 +5,8 @@ use anchor_spl::{
     token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
 };
 
+use anchor_spl::token_interface::{CloseAccount, close_account};
+
 use crate::state::EscrowState;
 
 #[derive(Accounts)]
@@ -43,7 +45,8 @@ pub struct Refund<'info> {
 impl<'info> Refund <'info> {
     pub fn refund_and_close_vault(&mut self) -> Result<()> {
 
-        let signer_seeds: [&[&[u8]]] = &[&[
+        let user = 
+        let signer_seeds: &[&[&[u8]]] = &[&[
             b"escrow",
             self.maker.to_account_info().key().as_ref(),
             &self.escrow.seeds.to_le_bytes()[..],
