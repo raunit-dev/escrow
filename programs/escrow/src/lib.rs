@@ -23,25 +23,30 @@ pub mod escrow {
         ctx: Context<Make>,
         seeds: u64,
         recieve_amount: u64,
-        decimals: u8
+        deposit_amount: u64,
+        decimals: u8,
     ) -> Result<()> {
         ctx.accounts.init_escrow_state(seeds,recieve_amount,&ctx.bumps)?;
-        ctx.accounts.deposit(recieve_amount,decimals)
+        ctx.accounts.deposit(deposit_amount,decimals)
     }
 
     pub fn refund(ctx: Context<Refund>) -> Result<()> {
         ctx.accounts.refund_and_close_vault()
     }
 
-    pub fn deposit(ctx: Context<Take>) -> Result<()> {
-        ctx.accounts.deposit(amount,decimals)?;
+    pub fn deposit(
+        ctx: Context<Take>,
+        amount: u64,
+        decimals: u8,
+    ) -> Result<()> {
+        ctx.accounts.deposit(amount, decimals)
     }
 
     pub fn withdraw(ctx: Context<Take>) -> Result<()> {
-        ctx.accounts.withdraw()?;
+        ctx.accounts.withdraw()
     }
 
     pub fn close_account(ctx: Context<Take>) -> Result<()> {
-        ctx.accounts.close_vault()?;
+        ctx.accounts.close_vault()
     }
 }

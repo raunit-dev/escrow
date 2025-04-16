@@ -53,7 +53,7 @@ impl<'info> Refund <'info> {
             &[self.escrow.bump]
         ];
          
-         let signer_seeds = &[&seeds[..]];
+        let signer_seeds = &[&seeds[..]];
         let cpi_program = self.token_program.to_account_info();
         let transfer_accounts = TransferChecked {
             from: self.maker_mint_a_ata.to_account_info(),
