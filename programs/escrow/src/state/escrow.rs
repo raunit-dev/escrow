@@ -12,6 +12,6 @@ pub struct EscrowState {
 }
 
 impl Space for EscrowState {
-    // First 8 Bytes are Discriminator (u64)
+    
     const INIT_SPACE: usize = 8 + 8 + 1 + 32 + 32 + 32 + 8 ;
 }

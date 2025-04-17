@@ -15,12 +15,12 @@ pub struct Make<'info> {
     #[account(
         mint::token_program = token_program
     )]
-    pub mint_a: InterfaceAccount<'info, Mint>, // Token that the maker is offering (e.g., USDC).
+    pub mint_a: InterfaceAccount<'info, Mint>, 
 
     #[account(
         mint::token_program = token_program
     )]
-    pub mint_b: InterfaceAccount<'info, Mint>, // Token that the maker wants (e.g., USDT).
+    pub mint_b: InterfaceAccount<'info, Mint>,
 
     #[account(
         init_if_needed,
@@ -28,7 +28,7 @@ pub struct Make<'info> {
         associated_token::mint = mint_a,
         associated_token::authority = maker,
     )]
-    pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>, // Maker's token account for mint_a.
+    pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         init,
@@ -37,7 +37,7 @@ pub struct Make<'info> {
         seeds = [b"escrow", maker.key().as_ref(), &seed.to_le_bytes().as_ref()],
         bump
     )]
-    pub escrow: Account<'info, EscrowState>, // Escrow state PDA.
+    pub escrow: Account<'info, EscrowState>,
 
     #[account(
         init,
@@ -45,7 +45,7 @@ pub struct Make<'info> {
         associated_token::authority = escrow,
         payer = maker
     )]
-    pub vault: InterfaceAccount<'info, TokenAccount>, // Vault holding the escrowed tokens.
+    pub vault: InterfaceAccount<'info, TokenAccount>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
@@ -57,15 +57,15 @@ impl<'info> Make<'info> {
         &mut self,
         seeds: u64,
         recieve_amount: u64,
-        bump: &InitializeBumps,
+        bump: &MakeBumps,
     ) -> Result<()> {
         self.escrow.set_inner(EscrowState {
             seeds,
             maker: self.maker.key(),
             mint_a: self.mint_a.key(),
             mint_b: self.mint_b.key(),
-            recieve_amount,
-            bump,
+            recieve_amount: recieve_amount,
+            bump: bump.escrow
         });
         Ok(())
     }
