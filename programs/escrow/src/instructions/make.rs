@@ -57,7 +57,7 @@ impl<'info> Make<'info> {
         &mut self,
         seeds: u64,
         recieve_amount: u64,
-        bump: u8,
+        bump: &InitializeBumps,
     ) -> Result<()> {
         self.escrow.set_inner(EscrowState {
             seeds,
