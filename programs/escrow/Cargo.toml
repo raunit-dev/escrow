@@ -19,6 +19,9 @@ idl-build = ["anchor-lang/idl-build","anchor-spl/idl-build"]
 
 
 [dependencies]
-anchor-lang = {version ="0.31.0", features = ["init-if-needed"]}
-anchor-spl = {version ="0.31.0", features = ["metadata"] }
+anchor-lang = {version ="0.30.0", features = ["init-if-needed"]}
+anchor-spl = {version ="0.30.0", features = ["metadata"] }
 
+
+[patch.crates-io]
+anchor-lang = { git = "https://github.com/solana-foundation/anchor", rev = "54d5396" } 

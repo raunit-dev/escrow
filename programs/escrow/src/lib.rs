@@ -23,10 +23,12 @@ pub mod escrow {
         ctx: Context<Make>,
         seeds: u64,
         recieve_amount: u64,
-        deposit_amount: u64,
-        decimals: u8,
+        amount: u64,
+        decimals: u8
     ) -> Result<()> {
-        ctx.accounts.init_escrow_state(seeds,recieve_amount,&ctx.bumps)
+        ctx.accounts.init_escrow_state(seeds, recieve_amount, &ctx.bumps)?;
+        ctx.accounts.deposit(amount, decimals)?;
+        Ok(())
     }
 
     pub fn refund(ctx: Context<Refund>) -> Result<()> {
