@@ -35,7 +35,7 @@ pub struct Make<'info> {
         init,
         payer = maker,
         space = EscrowState::INIT_SPACE,
-        seeds = [&b"escrow"[..], maker.key().as_ref(), &seed.to_le_bytes().as_ref()],
+        seeds = [b"escrow" , maker.key().as_ref() , seed.to_le_bytes().as_ref()],
         bump
     )]
     pub escrow: Account<'info, EscrowState>,
@@ -57,22 +57,22 @@ pub struct Make<'info> {
 impl<'info> Make<'info> {
     pub fn init_escrow_state(
         &mut self,
-        seeds: u64,
+        seed: u64,
         recieve_amount: u64,
-        bump: &MakeBumps,
+        bumps: &MakeBumps,
     ) -> Result<()> {
         self.escrow.set_inner(EscrowState {
-            seeds,
+            seed,
             maker: self.maker.key(),
             mint_a: self.mint_a.key(),
             mint_b: self.mint_b.key(),
             recieve_amount: recieve_amount,
-            bump: bump.escrow
+            bump: bumps.escrow
         });
         Ok(())
     }
 
-    pub fn deposit(&mut self, amount: u64, decimals: u8) -> Result<()> {
+    pub fn deposit(&mut self, amount: u64) -> Result<()> {
         let cpi_program = self.token_program.to_account_info();
         let transfer_accounts = TransferChecked {
             from: self.maker_mint_a_ata.to_account_info(),
@@ -82,7 +82,7 @@ impl<'info> Make<'info> {
         };
 
         let cpi_ctx = CpiContext::new(cpi_program, transfer_accounts);
-        transfer_checked(cpi_ctx, amount, decimals)?;
+        transfer_checked(cpi_ctx, amount, self.mint_a.decimals)?;
         Ok(())
     }
 }

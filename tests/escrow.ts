@@ -14,7 +14,7 @@ describe("escrow", () => {
   anchor.setProvider(provider);
   const program = anchor.workspace.Escrow as Program<Escrow>;
   
-  const maker = provider.wallet.publicKey;
+  const maker = provider.wallet;
   const taker = anchor.web3.Keypair.generate();
   const seed = new anchor.BN(12345);
   let mintA: PublicKey;
@@ -27,23 +27,23 @@ describe("escrow", () => {
   let takerMintBAta: PublicKey;
   
   const [escrow, escrowBump] = PublicKey.findProgramAddressSync(
-    [Buffer.from("escrow"), maker.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
+    [Buffer.from("escrow"), maker.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
     program.programId
   );
 
   before(async () => {
     mintA = await createMint(
       provider.connection,
-      provider.wallet.payer,
-      provider.wallet.publicKey,
+      maker.payer,
+      maker.publicKey,
       null,
       decimals
     );
     
     mintB = await createMint(
       provider.connection,
-      provider.wallet.payer,
-      provider.wallet.publicKey,
+      maker.payer,
+      maker.publicKey,
       null,
       6
     );
@@ -52,7 +52,7 @@ describe("escrow", () => {
       provider.connection,
       provider.wallet.payer,
       mintA,
-      maker
+      maker.publicKey
     );
     makerMintAAta = makerMintAAccount.address;
 
@@ -60,7 +60,7 @@ describe("escrow", () => {
       provider.connection,
       provider.wallet.payer,
       mintB,
-      maker
+      maker.publicKey
     );
     makerMintBAta = makerMintBAccount.address;
 
@@ -82,21 +82,21 @@ describe("escrow", () => {
     
     await mintTo(
       provider.connection,
-      provider.wallet.payer,
+      maker.payer,
       mintA,
       makerMintAAta,
-      provider.wallet.publicKey,
+      maker.publicKey,
       1000000000
     );
 
-    // await mintTo(
-    //   provider.connection,
-    //   provider.wallet.payer,
-    //   mintB,
-    //   takerMintBAta,
-    //   taker,
-    //   1000000000
-    // )
+    await mintTo(
+      provider.connection,
+      maker.payer,
+      mintB,
+      takerMintBAta,
+      maker.publicKey,
+      1000000000
+    )
     
     vault = getAssociatedTokenAddressSync(
       mintA,
@@ -117,7 +117,7 @@ describe("escrow", () => {
         decimals
       )
       .accountsPartial({
-        maker: maker,
+        maker: maker.publicKey,
         mintA: mintA,
         mintB: mintB,
         makerMintAAta: makerMintAAta,
@@ -131,29 +131,6 @@ describe("escrow", () => {
   
     console.log("\nYour transaction signature", tx);
     
-    const escrowAccount = await program.account.escrowState.fetch(escrow);
-    console.log("Escrow account:", escrowAccount);
-    
-    const vaultInfo = await provider.connection.getTokenAccountBalance(vault);
-    console.log("Vault token balance:", vaultInfo.value.uiAmount);
-  });
-  
-  it("refund tokens and close escrow", async () => {
-   
-    const tx = await program.methods
-      .refund()
-      .accountsPartial({
-        maker: maker,
-        mintA: mintA,
-        makerMintAAta: makerMintAAta,
-        escrow: escrow,
-        vault: vault,
-        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
-    console.log("\nYour transaction signature", tx);
     const escrowAccount = await program.account.escrowState.fetch(escrow);
     console.log("Escrow account:", escrowAccount);
     
@@ -168,7 +145,7 @@ describe("escrow", () => {
         decimals)
       .accountsPartial({
         taker: taker.publicKey,
-        maker: maker,
+        maker: maker.publicKey,
         mintB: mintB,
         mintA: mintA,
         takerMintBAta: takerMintBAta,
@@ -180,8 +157,28 @@ describe("escrow", () => {
         tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
+      .signers([taker])
       .rpc();
     console.log("\nYour transaction signature", tx);
   });
+  
+  // it("refund tokens and close escrow", async () => {
+   
+  //   const tx = await program.methods
+  //     .refund()
+  //     .accountsPartial({
+  //       maker: maker,
+  //       mintA: mintA,
+  //       makerMintAAta: makerMintAAta,
+  //       escrow: escrow,
+  //       vault: vault,
+  //       associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+  //       tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+  //       systemProgram: SystemProgram.programId,
+  //     })
+  //     .rpc();
+  //   console.log("\nYour transaction signature", tx);
+  // });
+
   
   });

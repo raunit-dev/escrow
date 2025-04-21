@@ -17,13 +17,8 @@ pub struct Take<'info> {
     pub taker: Signer<'info>,
     #[account(mut)]
     pub maker: SystemAccount<'info>,
-    #[account(
-        mint::token_program = token_program
-    )]
+
     pub mint_a: InterfaceAccount<'info, Mint>, 
-    #[account(
-        mint::token_program = token_program
-    )]
     pub mint_b: InterfaceAccount<'info, Mint>,
     
     #[account(
@@ -56,9 +51,11 @@ pub struct Take<'info> {
 
     #[account(
         mut,
-        has_one = mint_b,
+        close = maker,
         has_one = maker,
-        seeds = [&b"escrow"[..], maker.key().as_ref(), seed.to_le_bytes().as_ref()],
+        has_one = mint_a,
+        has_one = mint_b,
+        seeds = [b"escrow", maker.key().as_ref(), escrow.seed.to_le_bytes().as_ref()],
         bump = escrow.bump,
     )]
     pub escrow: Account<'info, EscrowState>, // This is the escrow state PDA.
@@ -94,12 +91,12 @@ impl<'info> Take<'info> {
 
 
         pub fn withdraw(&mut self) -> Result<()> {
-        let user_key = self.maker.key();
+        // let user_key = self.maker.key();
         let seeds = &[
             b"escrow",
-            user_key.as_ref(),
-            &self.escrow.seeds.to_le_bytes()[..],
-            &[self.escrow.bump]
+            self.maker.to_account_info().key.as_ref(),
+            &self.escrow.seed.to_le_bytes()[..],
+            &[self.escrow.bump],
         ];
          
         let signer_seeds = &[&seeds[..]];
@@ -118,12 +115,12 @@ impl<'info> Take<'info> {
      
         pub fn close_vault(&mut self) -> Result<()> {
            
-            let user_key = self.maker.key();
+
             let seeds = &[
-                b"escrow",
-                user_key.as_ref(),
-                &self.escrow.seeds.to_le_bytes()[..],
-                &[self.escrow.bump]
+            b"escrow",
+            self.maker.to_account_info().key.as_ref(),
+            &self.escrow.seed.to_le_bytes()[..],
+            &[self.escrow.bump],
             ];
             let signer_seeds = &[&seeds[..]];
 
