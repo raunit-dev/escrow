@@ -25,10 +25,9 @@ pub mod escrow {
         seeds: u64,
         recieve_amount: u64,
         amount: u64,
-        decimals: u8
     ) -> Result<()> {
         ctx.accounts.init_escrow_state(seeds, recieve_amount, &ctx.bumps)?;
-        ctx.accounts.deposit(amount, decimals)?;
+        ctx.accounts.deposit(amount)?;
         Ok(())
     }
 
@@ -38,10 +37,8 @@ pub mod escrow {
 
     pub fn take(
         ctx: Context<Take>,
-        amount: u64,
-        decimals: u8
     ) -> Result<()> {
-        ctx.accounts.deposit(amount, decimals)?;
+        ctx.accounts.deposit()?;
         ctx.accounts.withdraw()?;
         ctx.accounts.close_vault()?;
         Ok(())

@@ -46,8 +46,7 @@ pub struct Refund<'info> {
 
 impl<'info> Refund <'info> {
     pub fn refund_and_close_vault(&mut self) -> Result<()> {
-
-        let user_key = self.maker.key();
+        
         let seeds = &[
             b"escrow",
             self.maker.to_account_info().key.as_ref(),
