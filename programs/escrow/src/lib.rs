@@ -22,11 +22,11 @@ pub mod escrow {
 
     pub fn make(
         ctx: Context<Make>,
-        seeds: u64,
+        seed: u64,
         receive_amount: u64,
         amount: u64,
     ) -> Result<()> {
-        ctx.accounts.init_escrow_state(seeds, receive_amount, &ctx.bumps)?;
+        ctx.accounts.init_escrow_state(seed, receive_amount, &ctx.bumps)?;
         ctx.accounts.deposit(amount)?;
         Ok(())
     }
