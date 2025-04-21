@@ -30,6 +30,7 @@ pub struct Take<'info> {
         mut,
         associated_token::mint = mint_b,
         associated_token::authority = taker,
+        associated_token::token_program = token_program
     )]
     pub taker_mint_b_ata: InterfaceAccount<'info, TokenAccount>,
 
@@ -38,6 +39,7 @@ pub struct Take<'info> {
         payer = taker,
         associated_token::mint = mint_a,
         associated_token::authority = taker,
+        associated_token::token_program = token_program
 
     )]
     pub taker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
@@ -48,6 +50,7 @@ pub struct Take<'info> {
         payer = taker,
         associated_token::mint = mint_b,
         associated_token::authority = maker,
+        associated_token::token_program = token_program
     )]
     pub maker_mint_b_ata: InterfaceAccount<'info, TokenAccount>,
 
@@ -61,11 +64,12 @@ pub struct Take<'info> {
     pub escrow: Account<'info, EscrowState>, // This is the escrow state PDA.
 
     #[account(
+        mut,
         associated_token::mint = mint_a,
         associated_token::authority = escrow,
+        associated_token::token_program = token_program
     )]
-    pub vault: InterfaceAccount<'info, TokenAccount>, // The vault holding the escrowed tokens.
-
+    pub vault: InterfaceAccount<'info, TokenAccount>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>

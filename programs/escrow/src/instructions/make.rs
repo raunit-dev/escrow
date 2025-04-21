@@ -27,6 +27,7 @@ pub struct Make<'info> {
         payer = maker,
         associated_token::mint = mint_a,
         associated_token::authority = maker,
+        associated_token::token_program = token_program
     )]
     pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
 
@@ -43,6 +44,7 @@ pub struct Make<'info> {
         init,
         associated_token::mint = mint_a,
         associated_token::authority = escrow,
+        associated_token::token_program = token_program,
         payer = maker
     )]
     pub vault: InterfaceAccount<'info, TokenAccount>,

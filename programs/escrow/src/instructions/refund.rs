@@ -20,6 +20,7 @@ pub struct Refund<'info> {
         mut,
         associated_token::mint = mint_a,
         associated_token::authority = maker,
+        associated_token::token_program = token_program
     )]
     pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
     #[account(
@@ -34,8 +35,9 @@ pub struct Refund<'info> {
         mut,
         associated_token::mint = mint_a,
         associated_token::authority = escrow,
+        associated_token::token_program = token_program
     )]
-    pub vault: InterfaceAccount<'info, TokenAccount>, // The vault holding the escrowed tokens.
+    pub vault: InterfaceAccount<'info, TokenAccount>, 
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
@@ -56,10 +58,10 @@ impl<'info> Refund <'info> {
         let signer_seeds = &[&seeds[..]];
         let cpi_program = self.token_program.to_account_info();
         let transfer_accounts = TransferChecked {
-            from: self.maker_mint_a_ata.to_account_info(),
+            from: self.vault.to_account_info(),
             mint: self.mint_a.to_account_info(),
-            to: self.vault.to_account_info(),
-            authority: self.maker.to_account_info(), // The maker is the authority for this transfer.
+            to: self.maker_mint_a_ata.to_account_info(),
+            authority: self.escrow.to_account_info(),
         };
 
         let cpi_ctx = CpiContext::new_with_signer(cpi_program,transfer_accounts, signer_seeds);//creating an context 

@@ -8,7 +8,6 @@ import {
   getOrCreateAssociatedTokenAccount,
   mintTo
 } from "@solana/spl-token";
-import { assert } from "chai";
 
 describe("escrow", () => {
   const provider = anchor.AnchorProvider.env();
@@ -16,12 +15,16 @@ describe("escrow", () => {
   const program = anchor.workspace.Escrow as Program<Escrow>;
   
   const maker = provider.wallet.publicKey;
+  const taker = anchor.web3.Keypair.generate();
   const seed = new anchor.BN(12345);
   let mintA: PublicKey;
   let mintB: PublicKey;
   let makerMintAAta: PublicKey;
   let vault: PublicKey;
   const decimals = 9;
+  let makerMintBAta: PublicKey;
+  let takerMintAAta: PublicKey;
+  let takerMintBAta: PublicKey;
   
   const [escrow, escrowBump] = PublicKey.findProgramAddressSync(
     [Buffer.from("escrow"), maker.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
@@ -52,6 +55,30 @@ describe("escrow", () => {
       maker
     );
     makerMintAAta = makerMintAAccount.address;
+
+    const makerMintBAccount = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      provider.wallet.payer,
+      mintB,
+      maker
+    );
+    makerMintBAta = makerMintBAccount.address;
+
+    const takerMintAAccount = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      provider.wallet.payer,
+      mintA,
+      taker.publicKey
+    );
+    takerMintAAta = takerMintAAccount.address;
+
+    const takerMintBAccount = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      provider.wallet.payer,
+      mintB,
+      taker.publicKey
+    );
+    takerMintBAta = takerMintBAccount.address;
     
     await mintTo(
       provider.connection,
@@ -61,6 +88,15 @@ describe("escrow", () => {
       provider.wallet.publicKey,
       1000000000
     );
+
+    // await mintTo(
+    //   provider.connection,
+    //   provider.wallet.payer,
+    //   mintB,
+    //   takerMintBAta,
+    //   taker,
+    //   1000000000
+    // )
     
     vault = getAssociatedTokenAddressSync(
       mintA,
@@ -80,11 +116,11 @@ describe("escrow", () => {
         depositAmount,
         decimals
       )
-      .accounts({
+      .accountsPartial({
         maker: maker,
         mintA: mintA,
         mintB: mintB,
-        maker_mint_a_ata: makerMintAAta,
+        makerMintAAta: makerMintAAta,
         escrow: escrow,
         vault: vault,
         associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
@@ -103,12 +139,41 @@ describe("escrow", () => {
   });
   
   it("refund tokens and close escrow", async () => {
+   
     const tx = await program.methods
       .refund()
-      .accounts({
+      .accountsPartial({
         maker: maker,
         mintA: mintA,
-        maker_mint_a_ata: makerMintAAta,
+        makerMintAAta: makerMintAAta,
+        escrow: escrow,
+        vault: vault,
+        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+    console.log("\nYour transaction signature", tx);
+    const escrowAccount = await program.account.escrowState.fetch(escrow);
+    console.log("Escrow account:", escrowAccount);
+    
+    const vaultInfo = await provider.connection.getTokenAccountBalance(vault);
+    console.log("Vault token balance:", vaultInfo.value.uiAmount);
+  });
+
+  it("take and close vault", async () => {
+    const receiveAmount = new anchor.BN(2000000);
+    const tx = await program.methods
+      .take(receiveAmount,
+        decimals)
+      .accountsPartial({
+        taker: taker.publicKey,
+        maker: maker,
+        mintB: mintB,
+        mintA: mintA,
+        takerMintBAta: takerMintBAta,
+        takerMintAAta : takerMintAAta,
+        makerMintBAta : makerMintBAta,
         escrow: escrow,
         vault: vault,
         associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
@@ -119,4 +184,4 @@ describe("escrow", () => {
     console.log("\nYour transaction signature", tx);
   });
   
-  }); // This closing bracket was missing - it closes the describe block
+  });
