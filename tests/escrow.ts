@@ -6,7 +6,8 @@ import {
   getAssociatedTokenAddressSync, 
   createMint, 
   getOrCreateAssociatedTokenAccount,
-  mintTo
+  mintTo,
+  TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 
 describe("escrow", () => {
@@ -18,15 +19,14 @@ describe("escrow", () => {
   const taker = anchor.web3.Keypair.generate();
   const seed = new BN(8888);
   const receiveAmount = new BN(1_000_000);
-  const depositAmount = new BN(1_000_000);
-  let mintA: PublicKey;
-  let mintB: PublicKey;
-  let makerMintAAta: PublicKey;
-  let vault: PublicKey;
-  const decimals = 9;
-  let makerMintBAta: PublicKey;
-  let takerMintAAta: PublicKey;
-  let takerMintBAta: PublicKey;
+  const amount = new BN(1_000_000);
+  let mintA: anchor.web3.PublicKey;
+  let mintB: anchor.web3.PublicKey;
+  let makerMintAAta: anchor.web3.PublicKey;
+  let vault: anchor.web3.PublicKey;
+  let makerMintBAta: anchor.web3.PublicKey;
+  let takerMintAAta: anchor.web3.PublicKey;
+  let takerMintBAta: anchor.web3.PublicKey;
   
   const [escrow, escrowBump] = PublicKey.findProgramAddressSync(
     [Buffer.from("escrow"), maker.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
@@ -34,12 +34,13 @@ describe("escrow", () => {
   );
 
   before(async () => {
+
     mintA = await createMint(
       provider.connection,
       maker.payer,
       maker.publicKey,
       null,
-      decimals
+      6
     );
     
     mintB = await createMint(
@@ -108,14 +109,13 @@ describe("escrow", () => {
   });
 
   it("Creates escrow and deposits tokens", async () => {
-    const amount = new anchor.BN(1000000000);
-    const receiveAmount = new anchor.BN(2000000);
+
 
     const tx = await program.methods
       .make(
         seed,
-        receiveAmount,
         amount,
+        receiveAmount,
       )
       .accountsPartial({
         maker: maker.publicKey,
@@ -124,9 +124,9 @@ describe("escrow", () => {
         makerMintAAta: makerMintAAta,
         escrow: escrow,
         vault: vault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
         associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
       })
       .rpc();
   
@@ -140,6 +140,7 @@ describe("escrow", () => {
   });
 
   it("take and close vault", async () => {
+   
     const tx = await program.methods
       .take()
       .accountsPartial({
@@ -152,32 +153,72 @@ describe("escrow", () => {
         makerMintBAta : makerMintBAta,
         escrow: escrow,
         vault: vault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
         associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
       })
       .signers([taker])
       .rpc();
     console.log("\nYour transaction signature", tx);
   });
   
-  // it("refund tokens and close escrow", async () => {
+  it("refund tokens and close escrow", async () => {
+
+    const refundseed = new BN(6969);
+    const refundreceive = new BN(1_000_000);
+
+    const [refundescrow, refundescrowBump] = PublicKey.findProgramAddressSync(
+      [Buffer.from("escrow"), maker.publicKey.toBuffer(), refundseed.toArrayLike(Buffer, "le", 8)],
+      program.programId
+    );
+
+    const refundvault = getAssociatedTokenAddressSync(
+      mintA,
+      refundescrow,
+      true
+    );
+  
    
-  //   const tx = await program.methods
-  //     .refund()
-  //     .accountsPartial({
-  //       maker: maker,
-  //       mintA: mintA,
-  //       makerMintAAta: makerMintAAta,
-  //       escrow: escrow,
-  //       vault: vault,
-  //       associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-  //       tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-  //       systemProgram: SystemProgram.programId,
-  //     })
-  //     .rpc();
-  //   console.log("\nYour transaction signature", tx);
-  // });
+     await program.methods
+      .make(
+        refundseed,
+        refundreceive,
+        refundreceive
+      )
+      .accountsPartial({
+        maker: maker.publicKey,
+        mintA: mintA,
+        mintB: mintB,
+        makerMintAAta: makerMintAAta,
+        escrow: refundescrow,
+        vault: refundvault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+      })
+      .rpc();
+
+
+      const tx = await program.methods
+      .take()
+      .accountsPartial({
+        taker: taker.publicKey,
+        maker: maker.publicKey,
+        mintB: mintB,
+        mintA: mintA,
+        takerMintBAta: takerMintBAta,
+        takerMintAAta : takerMintAAta,
+        makerMintBAta : makerMintBAta,
+        escrow: refundescrow,
+        vault: refundvault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+      })
+      .signers([taker])
+      .rpc();
+      console.log("refund  complete:", tx);
+  });
 
   
   });
