@@ -58,7 +58,7 @@ impl<'info> Make<'info> {
     pub fn init_escrow_state(
         &mut self,
         seed: u64,
-        recieve_amount: u64,
+        receive_amount: u64,
         bumps: &MakeBumps,
     ) -> Result<()> {
         self.escrow.set_inner(EscrowState {
@@ -66,8 +66,8 @@ impl<'info> Make<'info> {
             maker: self.maker.key(),
             mint_a: self.mint_a.key(),
             mint_b: self.mint_b.key(),
-            recieve_amount: recieve_amount,
-            bump: bumps.escrow
+            receive_amount:receive_amount,
+            bump: bumps.escrow 
         });
         Ok(())
     }

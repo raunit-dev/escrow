@@ -11,7 +11,7 @@ use anchor_spl::token_interface::{CloseAccount, close_account};
 use crate::state::EscrowState;
 
 #[derive(Accounts)]
-#[instruction(seed: u64)]
+
 pub struct Take<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
@@ -73,76 +73,55 @@ pub struct Take<'info> {
 }
 
 impl<'info> Take<'info> {
+    pub fn deposit(&mut self) -> Result<()> {
+        let transfer_accounts = TransferChecked {
+            from: self.taker_mint_b_ata.to_account_info(),
+            mint: self.mint_b.to_account_info(),
+            to: self.maker_mint_b_ata.to_account_info(),
+            authority: self.taker.to_account_info(),
+        };
 
+        let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), transfer_accounts);
 
-        pub fn deposit(&mut self) -> Result<()> {
-            let cpi_program = self.token_program.to_account_info();
-            let transfer_accounts = TransferChecked {
-                from: self.taker_mint_b_ata.to_account_info(),
-                mint: self.mint_b.to_account_info(),
-                to: self.maker_mint_b_ata.to_account_info(),
-                authority: self.taker.to_account_info(), // The maker is the authority for this transfer.
-            };
-    
-            let cpi_ctx = CpiContext::new(cpi_program, transfer_accounts);//creating an context 
-            transfer_checked(cpi_ctx, self.escrow.recieve_amount, self.mint_b.decimals)?;
-            Ok(())
-        }
+        transfer_checked(cpi_ctx, self.escrow.receive_amount, self.mint_b.decimals)
+    }
 
-
-        pub fn withdraw(&mut self) -> Result<()> {
-
-        let seeds = &[
+    pub fn withdraw_and_close_vault(&mut self) -> Result<()> {
+        let signer_seeds: [&[&[u8]]; 1] = [&[
             b"escrow",
             self.maker.to_account_info().key.as_ref(),
             &self.escrow.seed.to_le_bytes()[..],
             &[self.escrow.bump],
-        ];
-         
-        let signer_seeds = &[&seeds[..]];
-        let cpi_program = self.token_program.to_account_info();
-        let transfer_accounts = TransferChecked {
+        ]];
+
+        let accounts = TransferChecked {
             from: self.vault.to_account_info(),
             mint: self.mint_a.to_account_info(),
             to: self.taker_mint_a_ata.to_account_info(),
-            authority: self.escrow.to_account_info(), 
+            authority: self.escrow.to_account_info(),
         };
 
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program,transfer_accounts, signer_seeds);//creating an context 
-        transfer_checked(cpi_ctx,self.vault.amount, self.mint_a.decimals)?;
-            Ok(())
-        }
-     
-        pub fn close_vault(&mut self) -> Result<()> {
-           
+        let ctx = CpiContext::new_with_signer(
+            self.token_program.to_account_info(),
+            accounts,
+            &signer_seeds,
+        );
 
-            let seeds = &[
-            b"escrow",
-            self.maker.to_account_info().key.as_ref(),
-            &self.escrow.seed.to_le_bytes()[..],
-            &[self.escrow.bump],
-            ];
-            let signer_seeds = &[&seeds[..]];
+        transfer_checked(ctx, self.vault.amount, self.mint_a.decimals)?;
 
-            let close_accounts = CloseAccount {
-                account:self.vault.to_account_info(),
-                destination: self.taker.to_account_info(),
-                authority: self.escrow.to_account_info(),
-            };
-    
-            let close_cpi_ctx = CpiContext::new_with_signer(
-                self.token_program.to_account_info(),
-                close_accounts,
-                signer_seeds,
-            );
-            close_account(close_cpi_ctx)?;
-            Ok(())
-    
-    
-        }
+        let accounts = CloseAccount {
+            account: self.vault.to_account_info(),
+            destination: self.taker.to_account_info(),
+            authority: self.escrow.to_account_info(),
+        };
 
+        let ctx = CpiContext::new_with_signer(
+            self.token_program.to_account_info(),
+            accounts,
+            &signer_seeds,
+        );
 
-
-        
-        
+        close_account(ctx)
     }
+}  
+    
