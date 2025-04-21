@@ -91,7 +91,7 @@ impl<'info> Take<'info> {
 
 
         pub fn withdraw(&mut self) -> Result<()> {
-        // let user_key = self.maker.key();
+
         let seeds = &[
             b"escrow",
             self.maker.to_account_info().key.as_ref(),
@@ -105,7 +105,7 @@ impl<'info> Take<'info> {
             from: self.vault.to_account_info(),
             mint: self.mint_a.to_account_info(),
             to: self.taker_mint_a_ata.to_account_info(),
-            authority: self.escrow.to_account_info(), // The maker is the authority for this transfer.
+            authority: self.escrow.to_account_info(), 
         };
 
         let cpi_ctx = CpiContext::new_with_signer(cpi_program,transfer_accounts, signer_seeds);//creating an context 

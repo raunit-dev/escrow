@@ -1,5 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+import { BN, Program } from "@coral-xyz/anchor";
 import { Escrow } from "../target/types/escrow";
 import { PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
 import { 
@@ -16,7 +16,9 @@ describe("escrow", () => {
   
   const maker = provider.wallet;
   const taker = anchor.web3.Keypair.generate();
-  const seed = new anchor.BN(12345);
+  const seed = new BN(8888);
+  const receiveAmount = new BN(1_000_000);
+  const depositAmount = new BN(1_000_000);
   let mintA: PublicKey;
   let mintB: PublicKey;
   let makerMintAAta: PublicKey;
@@ -86,7 +88,7 @@ describe("escrow", () => {
       mintA,
       makerMintAAta,
       maker.publicKey,
-      1000000000
+      2_000_000
     );
 
     await mintTo(
@@ -95,7 +97,7 @@ describe("escrow", () => {
       mintB,
       takerMintBAta,
       maker.publicKey,
-      1000000000
+      2_000_000
     )
     
     vault = getAssociatedTokenAddressSync(
@@ -106,15 +108,14 @@ describe("escrow", () => {
   });
 
   it("Creates escrow and deposits tokens", async () => {
-    const depositAmount = new anchor.BN(1000000000);
+    const amount = new anchor.BN(1000000000);
     const receiveAmount = new anchor.BN(2000000);
 
     const tx = await program.methods
       .make(
         seed,
         receiveAmount,
-        depositAmount,
-        decimals
+        amount,
       )
       .accountsPartial({
         maker: maker.publicKey,
@@ -139,10 +140,8 @@ describe("escrow", () => {
   });
 
   it("take and close vault", async () => {
-    const receiveAmount = new anchor.BN(2000000);
     const tx = await program.methods
-      .take(receiveAmount,
-        decimals)
+      .take()
       .accountsPartial({
         taker: taker.publicKey,
         maker: maker.publicKey,
