@@ -18,7 +18,13 @@ pub struct Take<'info> {
     #[account(mut)]
     pub maker: SystemAccount<'info>,
 
+    #[account(
+        mint::token_program = token_program
+    )]
     pub mint_a: InterfaceAccount<'info, Mint>, 
+    #[account(
+        mint::token_program = token_program
+    )]
     pub mint_b: InterfaceAccount<'info, Mint>,
     
     #[account(
@@ -27,7 +33,7 @@ pub struct Take<'info> {
         associated_token::authority = taker,
         associated_token::token_program = token_program
     )]
-    pub taker_mint_b_ata: InterfaceAccount<'info, TokenAccount>,
+    pub taker_ata_b: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         init_if_needed,
@@ -37,7 +43,7 @@ pub struct Take<'info> {
         associated_token::token_program = token_program
 
     )]
-    pub taker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
+    pub taker_ata_a: InterfaceAccount<'info, TokenAccount>,
 
     
     #[account(
@@ -47,7 +53,7 @@ pub struct Take<'info> {
         associated_token::authority = maker,
         associated_token::token_program = token_program
     )]
-    pub maker_mint_b_ata: InterfaceAccount<'info, TokenAccount>,
+    pub maker_ata_b: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
@@ -75,36 +81,38 @@ pub struct Take<'info> {
 impl<'info> Take<'info> {
     pub fn deposit(&mut self) -> Result<()> {
         let transfer_accounts = TransferChecked {
-            from: self.taker_mint_b_ata.to_account_info(),
+            from: self.taker_ata_b.to_account_info(),
             mint: self.mint_b.to_account_info(),
-            to: self.maker_mint_b_ata.to_account_info(),
+            to: self.maker_ata_b.to_account_info(),
             authority: self.taker.to_account_info(),
         };
-
-        let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), transfer_accounts);
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, transfer_accounts);
 
         transfer_checked(cpi_ctx, self.escrow.receive_amount, self.mint_b.decimals)
     }
 
     pub fn withdraw_and_close_vault(&mut self) -> Result<()> {
-        let signer_seeds: [&[&[u8]]; 1] = [&[
+        let seeds = &[
             b"escrow",
             self.maker.to_account_info().key.as_ref(),
             &self.escrow.seed.to_le_bytes()[..],
-            &[self.escrow.bump],
-        ]];
+            &[self.escrow.bump]
+        ];
+         
+        let signer_seeds = &[&seeds[..]];
 
         let accounts = TransferChecked {
             from: self.vault.to_account_info(),
             mint: self.mint_a.to_account_info(),
-            to: self.taker_mint_a_ata.to_account_info(),
+            to: self.taker_ata_a.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
 
         let ctx = CpiContext::new_with_signer(
             self.token_program.to_account_info(),
             accounts,
-            &signer_seeds,
+            signer_seeds,
         );
 
         transfer_checked(ctx, self.vault.amount, self.mint_a.decimals)?;
@@ -118,7 +126,7 @@ impl<'info> Take<'info> {
         let ctx = CpiContext::new_with_signer(
             self.token_program.to_account_info(),
             accounts,
-            &signer_seeds,
+            signer_seeds,
         );
 
         close_account(ctx)

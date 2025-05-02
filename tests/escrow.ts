@@ -158,23 +158,36 @@ describe("anchor-escrow", () => {
   });
 
   it("Make", async () => {
-    await program.methods
+    try {
+      await program.methods
       .make(seed, new BN(1e6), new BN(1e6))
       .accountsPartial({ ...accounts })
       .signers([maker])
       .rpc()
       .then(confirm)
       .then(log);
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
+
   });
 
   it("Refund", async () => {
-    await program.methods
+    try {
+      await program.methods
       .refund()
-      .accounts({ ...accounts })
+      .accountsPartial({ ...accounts })
       .signers([maker])
       .rpc()
       .then(confirm)
       .then(log);
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
+
+
   });
 
   it("Take", async () => {

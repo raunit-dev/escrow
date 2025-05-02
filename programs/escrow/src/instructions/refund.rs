@@ -10,11 +10,10 @@ use anchor_spl::token_interface::{CloseAccount, close_account};
 use crate::state::EscrowState;
 
 #[derive(Accounts)]
-#[instruction(seed: u64)]
+
 pub struct Refund<'info> {
     #[account(mut)]
     pub maker: Signer<'info>,
-    #[account(mint::token_program = token_program)]
     pub mint_a: InterfaceAccount<'info, Mint>, 
     #[account(
         mut,
@@ -22,12 +21,13 @@ pub struct Refund<'info> {
         associated_token::authority = maker,
         associated_token::token_program = token_program
     )]
-    pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
+    pub maker_ata_a: InterfaceAccount<'info, TokenAccount>,
     #[account(
         mut,
+        close = maker,
         has_one = mint_a,
         has_one = maker,
-        seeds = [&b"escrow"[..], maker.key().as_ref(), escrow.seed.to_le_bytes().as_ref()],
+        seeds = [b"escrow", maker.key().as_ref(), escrow.seed.to_le_bytes().as_ref()],
         bump = escrow.bump,
     )]
     pub escrow: Account<'info, EscrowState>, 
@@ -59,7 +59,7 @@ impl<'info> Refund <'info> {
         let transfer_accounts = TransferChecked {
             from: self.vault.to_account_info(),
             mint: self.mint_a.to_account_info(),
-            to: self.maker_mint_a_ata.to_account_info(),
+            to: self.maker_ata_a.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
 

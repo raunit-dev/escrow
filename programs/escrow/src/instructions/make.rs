@@ -23,29 +23,28 @@ pub struct Make<'info> {
     pub mint_b: InterfaceAccount<'info, Mint>,
 
     #[account(
-        init_if_needed,
-        payer = maker,
+        mut,
         associated_token::mint = mint_a,
         associated_token::authority = maker,
         associated_token::token_program = token_program
     )]
-    pub maker_mint_a_ata: InterfaceAccount<'info, TokenAccount>,
+    pub maker_ata_a: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         init,
         payer = maker,
-        space = EscrowState::INIT_SPACE,
         seeds = [b"escrow" , maker.key().as_ref() , seed.to_le_bytes().as_ref()],
+        space = EscrowState::INIT_SPACE,
         bump
     )]
     pub escrow: Account<'info, EscrowState>,
 
     #[account(
         init,
+        payer = maker,
         associated_token::mint = mint_a,
         associated_token::authority = escrow,
         associated_token::token_program = token_program,
-        payer = maker
     )]
     pub vault: InterfaceAccount<'info, TokenAccount>,
 
@@ -75,7 +74,7 @@ impl<'info> Make<'info> {
     pub fn deposit(&mut self, amount: u64) -> Result<()> {
         let cpi_program = self.token_program.to_account_info();
         let transfer_accounts = TransferChecked {
-            from: self.maker_mint_a_ata.to_account_info(),
+            from: self.maker_ata_a.to_account_info(),
             mint: self.mint_a.to_account_info(),
             to: self.vault.to_account_info(),
             authority: self.maker.to_account_info(),
